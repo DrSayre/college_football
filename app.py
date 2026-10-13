@@ -62,6 +62,10 @@ repeat opponents count for each matchup. A zero denominator is shown as unavaila
 Conference yards include only completed conference games. Yards allowed are the
 opponent’s total yards in those games. Differential = yards gained − yards allowed.
 Differential per game = differential ÷ completed conference games.
+For FBS independents (Notre Dame and UConn), all conference-style columns use
+completed games against the Big Ten, SEC, ACC, and Big 12 instead. Opponent wins
+and losses still use those opponents’ actual conference records. These matchups
+do not count as conference games for the Power Four opponent.
 Missing statistics show blank totals, with coverage indicating how many games have
 both teams’ yardage. Teams with no conference games have zero yards and no conference win %.
 

@@ -25,6 +25,8 @@ For another machine, create a virtual environment and run `python -m pip install
 
 Only completed conference games count toward the custom opponent and yardage metrics. Every matchup counts; repeated opponents count for each matchup. Opponents’ records update throughout the season. Ties count as half a win for record percentages and contribute neither A nor B.
 
+For FBS independents (Notre Dame and UConn), conference-style wins, losses, percentages, opponent metrics, and yardage instead use completed games against the Big Ten, SEC, ACC, and Big 12. Opponent metrics use those opponents’ actual conference records. Other matchups are excluded; the Power Four opponent’s own conference metrics do not include the independent matchup. Overall records still include all games.
+
 Missing game data or yardage is unavailable, not zero: totals are blank until coverage matches the recorded conference game count. Coverage shows games with both teams' yardage / expected conference games. Zero completed conference games yields zero yards and an unavailable conference percentage.
 
 Default table order: conference win %, opponent results %, yard differential, overall win %, then team name. The selected primary metric moves to the front of that ordering. Ranks are sequential table positions; they are not official standings and do not encode conference tiebreaker rules.

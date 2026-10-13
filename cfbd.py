@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from rankings import counts_for_team
 
 
 class DataError(RuntimeError):
@@ -43,9 +44,11 @@ def load_season(year):
     games = []
     for season_type in ("regular", "postseason"):
         games.extend(get("/games", year=year, seasonType=season_type))
-    # Only weeks with finished conference games need yardage requests.
+    # Include independents' Power Four games even in otherwise nonconference weeks.
+    records_by_id = {r["teamId"]: r for r in records}
     periods = sorted({(g.get("seasonType", "regular"), g["week"])
-                      for g in games if g.get("completed") and g.get("conferenceGame")})
+                      for g in games if any(counts_for_team(g, g.get(side + "Id"), records_by_id)
+                                            for side in ("home", "away"))})
     def fetch(period):
         season_type, week = period
         return get("/games/teams", year=year, seasonType=season_type, week=week)

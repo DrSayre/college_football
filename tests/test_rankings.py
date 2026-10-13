@@ -102,3 +102,44 @@ def test_rank_sort_and_ties_are_deterministic():
     ranked = rank_conference(frame)
     assert ranked["Team"].tolist() == ["C", "A", "B", "D"]
     assert ranked["Rank"].tolist() == [1, 2, 3, 4]
+
+
+@pytest.mark.parametrize("name", ["Notre Dame", "UConn"])
+def test_independents_use_power_four_only(name):
+    independent = record(100, name, 5, 2, 0, 0)
+    independent["conference"] = "FBS Independents"
+    records = [independent]
+    games, stats = [], []
+    for i, conference in enumerate(["Big Ten", "SEC", "ACC", "Big 12", "Mountain West", "FBS Independents"], 1):
+        opponent = record(i, f"Opponent {i}", 3, 2, 2, 1)
+        opponent["conference"] = conference
+        records.append(opponent)
+        # Alternate home/away, with two Power Four wins and two losses.
+        home = i % 2 == 1
+        games.append({"id": i, "completed": True, "conferenceGame": False,
+                      "homeId": 100 if home else i, "awayId": i if home else 100,
+                      "homePoints": 30, "awayPoints": 10,
+                      "homeConference": "FBS Independents" if home else conference,
+                      "awayConference": conference if home else "FBS Independents"})
+        stats.append({"id": i, "teams": [
+            {"teamId": 100, "stats": [{"category": "totalYards", "stat": "400"}]},
+            {"teamId": i, "stats": [{"category": "totalYards", "stat": "350"}]}]})
+    games.append({"id": 7, "completed": False, "conferenceGame": False,
+                  "homeId": 100, "awayId": 1, "awayConference": "Big Ten"})
+    frame = build_rankings(records, games, stats).set_index("Team")
+    row = frame.loc[name]
+    assert [row[c] for c in ["Wins", "Losses", "Conf wins", "Conf losses"]] == [5, 2, 2, 2]
+    assert row["Conf %"] == .5
+    assert row["Beaten opponents’ conf wins"] == 4
+    assert row["Lost-to opponents’ conf losses"] == 2
+    assert row["Opponent results %"] == pytest.approx(2 / 3)
+    assert row["Conf yards"] == 1600
+    assert row["Conf yards allowed"] == 1400
+    assert row["Yard differential / game"] == 50
+    assert row["Yardage coverage"] == "4/4"
+    assert frame.loc["Opponent 1", "Conf wins"] == 2
+    assert pd.isna(frame.loc["Opponent 1", "Conf yards"])
+    stats.pop(0)
+    incomplete = build_rankings(records, games, stats).set_index("Team").loc[name]
+    assert pd.isna(incomplete["Yard differential / game"])
+    assert incomplete["Yardage coverage"] == "3/4"

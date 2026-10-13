@@ -30,3 +30,19 @@ def test_only_completed_conference_weeks_fetched(monkeypatch):
     assert stats == [{"id": 123, "teams": []}]
     assert [(path, params) for path, params in calls if path == "/games/teams"] == [
         ("/games/teams", {"year": 2026, "seasonType": "regular", "week": 3})]
+
+
+def test_independent_power_four_week_is_fetched(monkeypatch):
+    calls = []
+    def fake_get(path, **params):
+        calls.append((path, params))
+        if path == "/records":
+            return [{"teamId": 1, "conference": "FBS Independents", "classification": "fbs"},
+                    {"teamId": 2, "conference": "ACC", "classification": "fbs"}]
+        if path == "/games" and params["seasonType"] == "regular":
+            return [{"completed": True, "conferenceGame": False, "week": 1,
+                     "homeId": 2, "awayId": 1, "homeConference": "ACC", "seasonType": "regular"}]
+        return []
+    monkeypatch.setattr(cfbd, "get", fake_get)
+    cfbd.load_season(2026)
+    assert ("/games/teams", {"year": 2026, "seasonType": "regular", "week": 1}) in calls

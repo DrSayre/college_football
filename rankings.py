@@ -3,6 +3,27 @@ from collections import defaultdict
 
 import pandas as pd
 
+POWER_FOUR = {"Big Ten", "Big 10", "SEC", "ACC", "Big 12"}
+
+
+def uses_power_four(record):
+    return record.get("classification", "").lower() == "fbs" and record.get("conference") in (
+        None, "", "Independent", "Independents", "FBS Independents"
+    )
+
+
+def counts_for_team(game, team_id, records_by_id):
+    """Independents count Power Four matchups; members count conference games."""
+    if not game.get("completed"):
+        return False
+    record = records_by_id.get(team_id, {})
+    if not uses_power_four(record):
+        return bool(game.get("conferenceGame"))
+    opponent_side = "away" if team_id == game.get("homeId") else "home"
+    opponent = records_by_id.get(game.get(opponent_side + "Id"), {})
+    conference = game.get(opponent_side + "Conference") or opponent.get("conference")
+    return conference in POWER_FOUR
+
 
 def percentage(wins, losses, ties=0):
     played = wins + losses + ties
@@ -23,7 +44,7 @@ def total_yards(team):
 def build_rankings(records, games, statistics):
     """Use season records for W/L and opponents' current conference records.
 
-    Only completed conference games contribute to opponent results and yards.
+    FBS independents use completed Power Four matchups as conference games.
     Missing yards never become zero or misleading partial season totals.
     """
     records_by_id = {r["teamId"]: r for r in records}
@@ -34,10 +55,11 @@ def build_rankings(records, games, statistics):
         if game["id"] in seen:
             continue
         seen.add(game["id"])
-        if not game.get("completed") or not game.get("conferenceGame"):
+        if not game.get("completed"):
             continue
-        conference_games[game["homeId"]].append((game, game["awayId"], True))
-        conference_games[game["awayId"]].append((game, game["homeId"], False))
+        for side, other, home in [("home", "away", True), ("away", "home", False)]:
+            if game.get(side + "Id") is not None and counts_for_team(game, game[side + "Id"], records_by_id):
+                conference_games[game[side + "Id"]].append((game, game[other + "Id"], home))
 
     rows = []
     for team_id, record in records_by_id.items():
@@ -46,6 +68,16 @@ def build_rankings(records, games, statistics):
         beaten_wins = lost_to_losses = yards_for = yards_against = coverage = 0
         opponents_complete = True
         team_games = conference_games[team_id]
+        scores_complete = True
+        if uses_power_four(record):
+            conf = {"wins": 0, "losses": 0, "ties": 0}
+            for game, _, home in team_games:
+                own = game.get("homePoints" if home else "awayPoints")
+                other = game.get("awayPoints" if home else "homePoints")
+                if own is None or other is None:
+                    scores_complete = False
+                else:
+                    conf["wins" if own > other else "losses" if own < other else "ties"] += 1
         for game, opponent_id, home in team_games:
             own_score = game.get("homePoints" if home else "awayPoints")
             other_score = game.get("awayPoints" if home else "homePoints")
@@ -65,8 +97,8 @@ def build_rankings(records, games, statistics):
                 yards_for += own_yards
                 yards_against += other_yards
 
-        expected = conf["wins"] + conf["losses"] + conf.get("ties", 0)
-        games_complete = len(team_games) == expected
+        expected = len(team_games) if uses_power_four(record) else conf["wins"] + conf["losses"] + conf.get("ties", 0)
+        games_complete = scores_complete and len(team_games) == expected
         yards_complete = games_complete and coverage == expected
         opponents_complete = opponents_complete and games_complete
         rows.append({
@@ -75,8 +107,9 @@ def build_rankings(records, games, statistics):
             "Classification": record.get("classification") or "unknown",
             "Wins": overall["wins"], "Losses": overall["losses"],
             "Win %": percentage(overall["wins"], overall["losses"], overall.get("ties", 0)),
-            "Conf wins": conf["wins"], "Conf losses": conf["losses"],
-            "Conf %": percentage(conf["wins"], conf["losses"], conf.get("ties", 0)),
+            "Conf wins": conf["wins"] if scores_complete else None,
+            "Conf losses": conf["losses"] if scores_complete else None,
+            "Conf %": percentage(conf["wins"], conf["losses"], conf.get("ties", 0)) if scores_complete else None,
             "Beaten opponents’ conf wins": beaten_wins if opponents_complete else None,
             "Lost-to opponents’ conf losses": lost_to_losses if opponents_complete else None,
             "Opponent results %": percentage(beaten_wins, lost_to_losses) if opponents_complete else None,
