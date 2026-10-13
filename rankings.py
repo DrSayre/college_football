@@ -83,6 +83,7 @@ def build_rankings(records, games, statistics):
             "Conf yards": yards_for if yards_complete else None,
             "Conf yards allowed": yards_against if yards_complete else None,
             "Yard differential": yards_for - yards_against if yards_complete else None,
+            "Yard differential / game": (yards_for - yards_against) / expected if yards_complete and expected else None,
             "Yardage coverage": f"{coverage}/{expected}",
             "Complete": games_complete and yards_complete and opponents_complete,
         })

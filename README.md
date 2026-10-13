@@ -21,6 +21,7 @@ For another machine, create a virtual environment and run `python -m pip install
 - **Lost-to opponents’ conf losses (B):** sum of current conference losses of each conference opponent that beat the team.
 - **Opponent results %:** A / (A + B). A zero denominator is unavailable.
 - Conference yards gained and allowed use per-game `totalYards` from `/games/teams`, joined to completed conference games from `/games`. Yard differential is gained minus allowed.
+- **Yard differential / game:** conference yard differential divided by completed conference games. Kentucky’s −222 across four games is −55.5. Missing yardage or zero conference games produces an unavailable value.
 
 Only completed conference games count toward the custom opponent and yardage metrics. Every matchup counts; repeated opponents count for each matchup. Opponents’ records update throughout the season. Ties count as half a win for record percentages and contribute neither A nor B.
 

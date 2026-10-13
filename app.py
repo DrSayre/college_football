@@ -20,7 +20,7 @@ with st.sidebar:
     st.header("Season & rankings")
     year = st.number_input("Season", min_value=2000, max_value=2100, value=2026, step=1)
     level = st.selectbox("Division", ["FBS", "FCS", "All divisions"])
-    primary = st.selectbox("Rank first by", ["Conf %", "Opponent results %", "Yard differential", "Win %", "Conf wins"])
+    primary = st.selectbox("Rank first by", ["Conf %", "Opponent results %", "Yard differential", "Yard differential / game", "Win %", "Conf wins"])
     if st.button("Refresh API data", width="stretch"):
         season_data.clear()
     st.caption("Data is cached for 15 minutes. Refreshing uses your API request allowance.")
@@ -61,6 +61,7 @@ repeat opponents count for each matchup. A zero denominator is shown as unavaila
 
 Conference yards include only completed conference games. Yards allowed are the
 opponent’s total yards in those games. Differential = yards gained − yards allowed.
+Differential per game = differential ÷ completed conference games.
 Missing statistics show blank totals, with coverage indicating how many games have
 both teams’ yardage. Teams with no conference games have zero yards and no conference win %.
 
@@ -77,7 +78,7 @@ if search:
 
 columns = ["Rank", "Team", "Wins", "Losses", "Win %", "Conf wins", "Conf losses", "Conf %",
            "Beaten opponents’ conf wins", "Lost-to opponents’ conf losses", "Opponent results %",
-           "Conf yards", "Conf yards allowed", "Yard differential", "Yardage coverage"]
+           "Conf yards", "Conf yards allowed", "Yard differential", "Yard differential / game", "Yardage coverage"]
 exports = []
 for conference in selected:
     # Rank the full conference before applying a team search.
@@ -90,6 +91,7 @@ for conference in selected:
     st.subheader(conference)
     config = {name: st.column_config.NumberColumn(name, format="%.3f")
               for name in ["Win %", "Conf %", "Opponent results %"]}
+    config["Yard differential / game"] = st.column_config.NumberColumn("Yard differential / game", format="%.1f")
     for name in ["Wins", "Losses", "Conf wins", "Conf losses", "Beaten opponents’ conf wins",
                  "Lost-to opponents’ conf losses", "Conf yards", "Conf yards allowed", "Yard differential"]:
         config[name] = st.column_config.NumberColumn(name, format="%d")

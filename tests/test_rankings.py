@@ -44,6 +44,7 @@ def test_kentucky_example(kentucky):
     assert row["Conf %"] == .75
     assert row["Opponent results %"] == .75
     assert row["Yardage coverage"] == "4/4"
+    assert row["Yard differential / game"] == -55.5
 
 
 def test_missing_yards_never_become_partial_totals(kentucky):
@@ -51,6 +52,7 @@ def test_missing_yards_never_become_partial_totals(kentucky):
     row = team_row(kentucky)
     assert pd.isna(row["Conf yards"])
     assert pd.isna(row["Yard differential"])
+    assert pd.isna(row["Yard differential / game"])
     assert row["Opponent results %"] == .75
     assert row["Yardage coverage"] == "3/4"
 
@@ -79,6 +81,7 @@ def test_no_conference_games():
     assert pd.isna(row["Conf %"])
     assert pd.isna(row["Opponent results %"])
     assert row["Conf yards"] == 0
+    assert pd.isna(row["Yard differential / game"])
     assert row["Complete"]
 
 
